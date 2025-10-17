@@ -2,7 +2,7 @@
 name = "todo-list"
 version = "0.1.0"
 description = "A simple ToDo list application with Python OOP"
-authors = ["Your Name <your.email@example.com>"]
+authors = ["maryam345masoomi@gmail.com"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
