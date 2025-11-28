@@ -3,16 +3,16 @@ version: '3.9'
 services:
   db:
     image: postgres:16
-    container_name: todo_postgres
+    container_name: todo-list-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-todo_db}
       POSTGRES_USER: ${POSTGRES_USER:-todo_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todo_pass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todo_password}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
 
 volumes:
   postgres_data:
