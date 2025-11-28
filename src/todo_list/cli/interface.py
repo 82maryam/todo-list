@@ -1,4 +1,5 @@
-from ..storage.in_memory_storage import InMemoryStorage
+from typing import Any
+
 from ..core.exceptions import (
     TodoListError,
     ValidationError,
@@ -10,8 +11,8 @@ from ..core.exceptions import (
 
 class CLIInterface:
 
-    def __init__(self) -> None:
-        self.storage = InMemoryStorage()
+    def __init__(self, storage: Any) -> None:
+        self.storage = storage
         self.running = True
 
     def display_menu(self) -> None:
@@ -47,7 +48,7 @@ class CLIInterface:
         print("-" * 30)
 
     def get_user_input(self, prompt: str, required: bool = True) -> str:
-     
+
         while True:
             try:
                 user_input = input(prompt).strip()
@@ -98,21 +99,21 @@ class CLIInterface:
 
     def list_projects(self) -> None:
         print("\n--- Project List ---")
-        
+
         try:
             projects = self.storage.get_all_projects()
             if not projects:
                 print(" No projects found")
                 return
-            
+
             for project in projects:
                 print(f"\n ID: {project.id}")
                 print(f" Name: {project.name}")
                 print(f" Description: {project.description}")
-                print(f" Task Count: {project.task_count}") 
+                print(f" Task Count: {project.task_count}")
                 print(f" Created At: {project.created_at}")
                 print("-" * 30)
-                
+
         except TodoListError as e:
             self.handle_error(e)
 
@@ -219,13 +220,17 @@ class CLIInterface:
                 return
 
             for task in tasks:
-                status_icons = {"todo", "doing", "done"}
-                icon = status_icons.get(task.status, )
+                status_icons = {
+                    "todo": "[ ]",
+                    "doing": "[~]",
+                    "done": "[x]",
+                }
+                icon = status_icons.get(task.status, "[?]")
 
                 print(f"\n ID: {task.id}")
-                print(f"Title: {task.title}")
+                print(f" Title: {task.title}")
                 print(f" Description: {task.description}")
-                print(f"{icon} Status: {task.status}")
+                print(f" {icon} Status: {task.status}")
                 print(f" Deadline: {task.deadline or 'Not set'}")
                 print(f" Created At: {task.created_at}")
                 print("-" * 30)
