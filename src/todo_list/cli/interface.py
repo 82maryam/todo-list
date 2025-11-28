@@ -220,13 +220,17 @@ class CLIInterface:
                 return
 
             for task in tasks:
-                status_icons = {"todo", "doing", "done"}
-                icon = status_icons.get(task.status, )
+                status_icons = {
+                    "todo": "[ ]",
+                    "doing": "[~]",
+                    "done": "[x]",
+                }
+                icon = status_icons.get(task.status, "[?]")
 
                 print(f"\n ID: {task.id}")
-                print(f"Title: {task.title}")
+                print(f" Title: {task.title}")
                 print(f" Description: {task.description}")
-                print(f"{icon} Status: {task.status}")
+                print(f" {icon} Status: {task.status}")
                 print(f" Deadline: {task.deadline or 'Not set'}")
                 print(f" Created At: {task.created_at}")
                 print("-" * 30)
