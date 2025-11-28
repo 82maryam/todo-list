@@ -20,7 +20,7 @@ class Validator:
 
         if len(text) > max_length:
             raise ValidationError(
-                f"{field_name}cant more then{max_length} charcter"
+                f"{field_name}cant more then{max_length} character"
             )
 
         return text
