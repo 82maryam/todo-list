@@ -7,7 +7,7 @@ from sqlalchemy import pool
 from alembic import context
 from dotenv import load_dotenv
 from src.todo_list.db.base import Base  # noqa
-
+from src.todo_list.models import project, task  # noqa: F401
 
 load_dotenv()
 
