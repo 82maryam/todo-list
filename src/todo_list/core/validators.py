@@ -7,19 +7,20 @@ class Validator:
 
     @staticmethod
     def validate_text(
-        text: str, field_name: str, min_length: int, allow_empty: bool = False
+        text: str, field_name: str, max_length: int, allow_empty: bool = False
     ) -> str:
+
         if not isinstance(text, str):
-            raise ValidationError(f"{field_name} must be a string")
+            raise ValidationError(f"{field_name} must be string")
 
         text = text.strip()
 
         if not text and not allow_empty:
             raise ValidationError(f"{field_name} must not be empty")
 
-        if len(text) < min_length:
+        if len(text) > max_length:
             raise ValidationError(
-                f"{field_name} must be at least {min_length} characters"
+                f"{field_name}cant more then{max_length} charcter"
             )
 
         return text
