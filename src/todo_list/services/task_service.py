@@ -89,7 +89,6 @@ class TaskService:
         return task
 
     def list_tasks_for_project(self, project_id: int) -> List[Task]:
-        # اگر پروژه وجود نداشته باشد، ارور NotFoundError بدهیم
         self._project_repository.get_by_id(project_id)
         return self._task_repository.list_by_project(project_id)
 
