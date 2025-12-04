@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    container_name: todolist-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-todolist}
+      POSTGRES_USER: ${DB_USER:-todolist}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-todolist}
+    ports:
+      - '${DB_PORT:-5400}:5432'
+    volumes:
+      - todolist-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USER:-todolist} -d ${DB_NAME:-todolist}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  todolist-db-data:
