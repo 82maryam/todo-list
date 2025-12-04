@@ -1,5 +1,6 @@
 from collections.abc import Generator
 
+from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from ..db.session import SessionLocal
@@ -17,12 +18,16 @@ def get_db_session() -> Generator[Session, None, None]:
         db.close()
 
 
-def get_project_service(db: Session) -> ProjectService:
+def get_project_service(
+    db: Session = Depends(get_db_session),
+) -> ProjectService:
     project_repo = ProjectRepository(db)
     return ProjectService(project_repository=project_repo)
 
 
-def get_task_service(db: Session) -> TaskService:
+def get_task_service(
+    db: Session = Depends(get_db_session),
+) -> TaskService:
     project_repo = ProjectRepository(db)
     task_repo = TaskRepository(db)
     return TaskService(

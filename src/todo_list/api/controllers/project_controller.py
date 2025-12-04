@@ -3,7 +3,6 @@ from typing import List
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from ...core.exceptions import NotFoundError, DuplicateError, ValidationError
 from ..controller_schemas.requests import (
     ProjectCreateRequest,
     ProjectUpdateRequest,
@@ -22,7 +21,6 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 )
 def create_project(
     payload: ProjectCreateRequest,
-    db: Session = Depends(get_db_session),
     project_service: ProjectService = Depends(get_project_service),
 ) -> ProjectResponse:
     project = project_service.create_project(
@@ -34,11 +32,10 @@ def create_project(
 
 @router.get(
     "",
-    response_model=List[ProjectResponse],
+    response_model=list[ProjectResponse],
     status_code=status.HTTP_200_OK,
 )
 def list_projects(
-    db: Session = Depends(get_db_session),
     project_service: ProjectService = Depends(get_project_service),
 ) -> list[ProjectResponse]:
     projects = project_service.list_projects()
@@ -52,7 +49,6 @@ def list_projects(
 )
 def get_project(
     project_id: int,
-    db: Session = Depends(get_db_session),
     project_service: ProjectService = Depends(get_project_service),
 ) -> ProjectResponse:
     project = project_service.get_project(project_id)
@@ -67,7 +63,6 @@ def get_project(
 def update_project(
     project_id: int,
     payload: ProjectUpdateRequest,
-    db: Session = Depends(get_db_session),
     project_service: ProjectService = Depends(get_project_service),
 ) -> ProjectResponse:
     project = project_service.update_project(
@@ -84,7 +79,6 @@ def update_project(
 )
 def delete_project(
     project_id: int,
-    db: Session = Depends(get_db_session),
     project_service: ProjectService = Depends(get_project_service),
 ) -> None:
     project_service.delete_project(project_id)

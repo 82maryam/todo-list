@@ -1,7 +1,6 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
 
 from ..controller_schemas.requests import (
     TaskCreateRequest,
@@ -23,7 +22,6 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 def create_task_for_project(
     project_id: int,
     payload: TaskCreateRequest,
-    db: Session = Depends(get_db_session),
     task_service: TaskService = Depends(get_task_service),
 ) -> TaskResponse:
     task = task_service.create_task(
@@ -43,7 +41,6 @@ def create_task_for_project(
 )
 def list_tasks_for_project(
     project_id: int,
-    db: Session = Depends(get_db_session),
     task_service: TaskService = Depends(get_task_service),
 ) -> list[TaskResponse]:
     tasks = task_service.list_tasks_for_project(project_id)
@@ -57,7 +54,6 @@ def list_tasks_for_project(
 )
 def get_task(
     task_id: int,
-    db: Session = Depends(get_db_session),
     task_service: TaskService = Depends(get_task_service),
 ) -> TaskResponse:
     task = task_service.get_task(task_id)
@@ -72,7 +68,6 @@ def get_task(
 def update_task(
     task_id: int,
     payload: TaskUpdateRequest,
-    db: Session = Depends(get_db_session),
     task_service: TaskService = Depends(get_task_service),
 ) -> TaskResponse:
     task = task_service.update_task(
@@ -93,7 +88,6 @@ def update_task(
 def change_task_status(
     task_id: int,
     payload: TaskStatusChangeRequest,
-    db: Session = Depends(get_db_session),
     task_service: TaskService = Depends(get_task_service),
 ) -> TaskResponse:
     task = task_service.change_status(
@@ -109,7 +103,6 @@ def change_task_status(
 )
 def delete_task(
     task_id: int,
-    db: Session = Depends(get_db_session),
     task_service: TaskService = Depends(get_task_service),
 ) -> None:
     task_service.delete_task(task_id)
