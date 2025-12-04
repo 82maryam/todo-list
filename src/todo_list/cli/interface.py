@@ -12,7 +12,13 @@ from ..services.task_service import TaskService
 
 
 class CLIInterface:
+    """
+        Deprecated CLI interface for the ToDo List application.
 
+        This interface is kept only for backwards compatibility.
+        The main entrypoint of the system is now the HTTP API
+        implemented with FastAPI in `todo_list.api`.
+    """
     def __init__(
         self,
         project_service: ProjectService,
@@ -110,6 +116,13 @@ class CLIInterface:
         print("-" * 40)
 
     def run(self) -> None:
+
+        print(
+            "WARNING: The CLI interface is deprecated and will be removed "
+            "in a future version. Please use the HTTP API instead."
+            )
+
+
         print("Welcome to the ToDo List application!")
         while self.running:
             self.display_main_menu()
