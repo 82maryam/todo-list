@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Optional
 
 from ..core.exceptions import (
     TodoListError,
@@ -7,387 +7,252 @@ from ..core.exceptions import (
     LimitExceededError,
     NotFoundError,
 )
+from ..services.project_service import ProjectService
+from ..services.task_service import TaskService
 
 
 class CLIInterface:
     """
-    Deprecated CLI interface for the ToDo List application.
+        Deprecated CLI interface for the ToDo List application.
 
-    This interface is kept only for backwards compatibility.
-    The main entrypoint of the system is now the HTTP API
-    implemented with FastAPI in `todo_list.api`.
+        This interface is kept only for backwards compatibility.
+        The main entrypoint of the system is now the HTTP API
+        implemented with FastAPI in `todo_list.api`.
     """
-
-
-    def __init__(self, storage: Any) -> None:
-        self.storage = storage
+    def __init__(
+        self,
+        project_service: ProjectService,
+        task_service: TaskService,
+    ) -> None:
+        self.project_service = project_service
+        self.task_service = task_service
         self.running = True
 
-    def display_menu(self) -> None:
-        print("\n" + "=" * 50)
-        print(" ToDoList Management System")
-        print("=" * 50)
-        print("1. Manage Projects")
-        print("2. Manage Tasks")
+
+    def get_user_input(self, prompt: str) -> str:
+        while True:
+            try:
+                value = input(prompt).strip()
+                if value == "":
+                    print("Input cannot be empty. Please try again.")
+                    continue
+                return value
+            except KeyboardInterrupt:
+                print("\n\nExiting program...")
+                self.running = False
+                return ""
+            except EOFError:
+                print("\n\nExiting program...")
+                self.running = False
+                return ""
+
+    def get_optional_input(self, prompt: str) -> Optional[str]:
+        try:
+            value = input(prompt).strip()
+            return value or None
+        except KeyboardInterrupt:
+            print("\n\nExiting program...")
+            self.running = False
+            return None
+        except EOFError:
+            print("\n\nExiting program...")
+            self.running = False
+            return None
+
+    def get_int_input(self, prompt: str) -> Optional[int]:
+        while True:
+            raw = self.get_user_input(prompt)
+            if not self.running:
+                return None
+            try:
+                return int(raw)
+            except ValueError:
+                print("Invalid number. Please enter a valid integer.")
+
+    def handle_error(self, error: Exception) -> None:
+        if isinstance(error, ValidationError):
+            print(f"Validation error: {error}")
+        elif isinstance(error, DuplicateError):
+            print(f"Duplicate error: {error}")
+        elif isinstance(error, LimitExceededError):
+            print(f"Limit exceeded: {error}")
+        elif isinstance(error, NotFoundError):
+            print(f"Not found: {error}")
+        elif isinstance(error, TodoListError):
+            print(f"Application error: {error}")
+        else:
+            print(f"Unexpected error: {error}")
+
+    def display_main_menu(self) -> None:
+        print("\n" + "=" * 40)
+        print(" ToDo List Application")
+        print("=" * 40)
+        print("1. Project management")
+        print("2. Task management")
         print("3. Exit")
-        print("-" * 50)
+        print("-" * 40)
 
     def display_projects_menu(self) -> None:
-        print("\n" + "=" * 30)
-        print(" Project Management")
-        print("=" * 30)
+        print("\n" + "=" * 40)
+        print(" Project management")
+        print("=" * 40)
         print("1. Create a new project")
         print("2. View all projects")
         print("3. Edit a project")
         print("4. Delete a project")
         print("5. Back to main menu")
-        print("-" * 30)
+        print("-" * 40)
 
     def display_tasks_menu(self) -> None:
-        print("\n" + "=" * 30)
-        print(" Task Management")
-        print("=" * 30)
+        print("\n" + "=" * 40)
+        print(" Task management")
+        print("=" * 40)
         print("1. Create a new task")
         print("2. View tasks of a project")
         print("3. Edit a task")
         print("4. Change task status")
         print("5. Delete a task")
         print("6. Back to main menu")
-        print("-" * 30)
+        print("-" * 40)
 
-    def get_user_input(self, prompt: str, required: bool = True) -> str:
+    def run(self) -> None:
 
-        while True:
-            try:
-                user_input = input(prompt).strip()
-                if required and not user_input:
-                    print(" This field is required. Please enter a value.")
-                    continue
-                return user_input
-            except KeyboardInterrupt:
-                print("\n\n Exiting program...")
+        print(
+            "WARNING: The CLI interface is deprecated and will be removed "
+            "in a future version. Please use the HTTP API instead."
+            )
+
+
+        print("Welcome to the ToDo List application!")
+        while self.running:
+            self.display_main_menu()
+            choice = self.get_user_input("Your choice: ")
+
+            if not self.running:
+                break
+
+            if choice == "1":
+                self.handle_projects_menu()
+            elif choice == "2":
+                self.handle_tasks_menu()
+            elif choice == "3":
+                print("Thank you for using the system! Goodbye!")
                 self.running = False
-                return ""
-            except EOFError:
-                print("\n\n Exiting program...")
-                self.running = False
-                return ""
-
-    def handle_error(self, error: Exception) -> None:
-        if isinstance(error, ValidationError):
-            print(f" Validation Error: {error}")
-        elif isinstance(error, DuplicateError):
-            print(f" Duplicate Error: {error}")
-        elif isinstance(error, LimitExceededError):
-            print(f" Limit Exceeded: {error}")
-        elif isinstance(error, NotFoundError):
-            print(f" Not Found: {error}")
-        elif isinstance(error, TodoListError):
-            print(f" System Error: {error}")
-        else:
-            print(f" Unknown Error: {error}")
-
-    def show_success_message(self, message: str) -> None:
-        print(f" {message}")
-
-
-    def create_project(self) -> None:
-        print("\n--- Create New Project ---")
-
-        name = self.get_user_input("Project name: ")
-        description = self.get_user_input("Project description: ", required=False)
-
-        try:
-            project = self.storage.create_project(name, description)
-            self.show_success_message(
-                f"Project '{project.name}' created with ID {project.id}"
-            )
-        except TodoListError as e:
-            self.handle_error(e)
-
-    def list_projects(self) -> None:
-        print("\n--- Project List ---")
-
-        try:
-            projects = self.storage.get_all_projects()
-            if not projects:
-                print(" No projects found")
-                return
-
-            for project in projects:
-                print(f"\n ID: {project.id}")
-                print(f" Name: {project.name}")
-                print(f" Description: {project.description}")
-                print(f" Task Count: {project.task_count}")
-                print(f" Created At: {project.created_at}")
-                print("-" * 30)
-
-        except TodoListError as e:
-            self.handle_error(e)
-
-    def update_project(self) -> None:
-        print("\n--- Edit Project ---")
-
-        try:
-            project_id = int(self.get_user_input("Project ID: "))
-            project = self.storage.get_project(project_id)
-
-            print(f"\nCurrent Project:")
-            print(f"Name: {project.name}")
-            print(f"Description: {project.description}")
-
-            new_name = (
-                self.get_user_input(f"New name (current: {project.name}): ", required=False)
-                or project.name
-            )
-            new_description = (
-                self.get_user_input(
-                    f"New description (current: {project.description}): ", required=False
-                )
-                or project.description
-            )
-
-            updated_project = self.storage.update_project(
-                project_id, new_name, new_description
-            )
-            self.show_success_message(f"Project '{updated_project.name}' updated successfully.")
-
-        except ValueError:
-            print(" Project ID must be a number.")
-        except TodoListError as e:
-            self.handle_error(e)
-
-    def delete_project(self) -> None:
-        print("\n--- Delete Project ---")
-
-        try:
-            project_id = int(self.get_user_input("Project ID: "))
-            project = self.storage.get_project(project_id)
-
-            confirm = self.get_user_input(
-                f"Are you sure you want to delete project '{project.name}' and all its tasks? (y/n): "
-            ).lower()
-
-            if confirm == "y":
-                self.storage.delete_project(project_id)
-                self.show_success_message(f"Project '{project.name}' deleted successfully.")
             else:
-                print(" Deletion cancelled.")
-
-        except ValueError:
-            print("Project ID must be a number.")
-        except TodoListError as e:
-            self.handle_error(e)
-
-
-    def create_task(self) -> None:
-        """Create a new task."""
-        print("\n--- Create New Task ---")
-
-        try:
-            project_id = int(self.get_user_input("Project ID: "))
-            self.storage.get_project(project_id)
-
-            title = self.get_user_input("Task title: ")
-            description = self.get_user_input("Task description: ", required=False)
-
-            print("Task status:")
-            print("1. todo (default)")
-            print("2. doing")
-            print("3. done")
-
-            status_choice = self.get_user_input("Choose status (1-3) [default: 1]: ", required=False)
-            status_map = {"1": "todo", "2": "doing", "3": "done"}
-            status = status_map.get(status_choice, "todo")
-
-            deadline = self.get_user_input("Deadline (YYYY-MM-DD) [optional]: ", required=False) or None
-
-            task = self.storage.create_task(project_id, title, description, status, deadline)
-            self.show_success_message(f"Task '{task.title}' created with ID {task.id}")
-
-        except ValueError:
-            print(" Project ID must be a number.")
-        except TodoListError as e:
-            self.handle_error(e)
-
-    def list_project_tasks(self) -> None:
-        print("\n--- Project Tasks ---")
-
-        try:
-            project_id = int(self.get_user_input("Project ID: "))
-            project = self.storage.get_project(project_id)
-            tasks = self.storage.get_project_tasks(project_id)
-
-            print(f"\n Project: {project.name}")
-            print(f" Description: {project.description}")
-            print(f" Number of tasks: {len(tasks)}")
-            print("=" * 40)
-
-            if not tasks:
-                print(" No tasks in this project.")
-                return
-
-            for task in tasks:
-                status_icons = {
-                    "todo": "[ ]",
-                    "doing": "[~]",
-                    "done": "[x]",
-                }
-                icon = status_icons.get(task.status, "[?]")
-
-                print(f"\n ID: {task.id}")
-                print(f" Title: {task.title}")
-                print(f" Description: {task.description}")
-                print(f" {icon} Status: {task.status}")
-                print(f" Deadline: {task.deadline or 'Not set'}")
-                print(f" Created At: {task.created_at}")
-                print("-" * 30)
-
-        except ValueError:
-            print(" Project ID must be a number.")
-        except TodoListError as e:
-            self.handle_error(e)
-
-    def update_task(self) -> None:
-        print("\n--- Edit Task ---")
-
-        try:
-            task_id = int(self.get_user_input("Task ID: "))
-            task = self.storage.get_task(task_id)
-
-            print(f"\nCurrent Task:")
-            print(f"Title: {task.title}")
-            print(f"Description: {task.description}")
-            print(f"Status: {task.status}")
-            print(f"Deadline: {task.deadline or 'Not set'}")
-
-            new_title = (
-                self.get_user_input(f"New title (current: {task.title}): ", required=False)
-                or task.title
-            )
-            new_description = (
-                self.get_user_input(f"New description (current: {task.description}): ", required=False)
-                or task.description
-            )
-
-            print("New status:")
-            print("1. todo")
-            print("2. doing")
-            print("3. done")
-
-            status_choice = self.get_user_input(
-                f"Choose new status (current: {task.status}) [1-3]: ", required=False
-            )
-            status_map = {"1": "todo", "2": "doing", "3": "done"}
-            new_status = status_map.get(status_choice, task.status)
-
-            new_deadline = (
-                self.get_user_input(
-                    f"New deadline (current: {task.deadline or 'Not set'}): ",
-                    required=False,
-                )
-                or task.deadline
-            )
-
-            if new_deadline == "Not set":
-                new_deadline = None
-
-            updated_task = self.storage.update_task(
-                task_id, new_title, new_description, new_status, new_deadline
-            )
-            self.show_success_message(f"Task '{updated_task.title}' updated successfully.")
-
-        except ValueError:
-            print(" Task ID must be a number.")
-        except TodoListError as e:
-            self.handle_error(e)
-
-    def change_task_status(self) -> None:
-        print("\n--- Change Task Status ---")
-
-        try:
-            task_id = int(self.get_user_input("Task ID: "))
-            task = self.storage.get_task(task_id)
-
-            print(f"\nCurrent Task: {task.title}")
-            print(f"Current Status: {task.status}")
-
-            print("\nNew status:")
-            print("1. todo")
-            print("2. doing")
-            print("3. done")
-
-            status_choice = self.get_user_input("Choose new status (1-3): ")
-            status_map = {"1": "todo", "2": "doing", "3": "done"}
-
-            if status_choice not in status_map:
-                print(" Invalid choice.")
-                return
-
-            new_status = status_map[status_choice]
-            updated_task = self.storage.change_task_status(task_id, new_status)
-            self.show_success_message(
-                f"Task '{updated_task.title}' status changed to '{new_status}'."
-            )
-
-        except ValueError:
-            print(" Task ID must be a number.")
-        except TodoListError as e:
-            self.handle_error(e)
-
-    def delete_task(self) -> None:
-        """Delete a task."""
-        print("\n--- Delete Task ---")
-
-        try:
-            task_id = int(self.get_user_input("Task ID: "))
-            task = self.storage.get_task(task_id)
-
-            confirm = self.get_user_input(
-                f"Are you sure you want to delete task '{task.title}'? (y/n): "
-            ).lower()
-
-            if confirm == "y":
-                self.storage.delete_task(task_id)
-                self.show_success_message(f"Task '{task.title}' deleted successfully.")
-            else:
-                print(" Deletion cancelled.")
-
-        except ValueError:
-            print(" Task ID must be a number.")
-        except TodoListError as e:
-            self.handle_error(e)
-
+                print("Invalid choice. Please try again.")
 
     def handle_projects_menu(self) -> None:
         while self.running:
             self.display_projects_menu()
             choice = self.get_user_input("Your choice: ")
 
+            if not self.running:
+                break
+
             if choice == "1":
                 self.create_project()
             elif choice == "2":
                 self.list_projects()
             elif choice == "3":
-                self.update_project()
+                self.edit_project()
             elif choice == "4":
                 self.delete_project()
             elif choice == "5":
                 break
             else:
-                print(" Invalid choice.")
+                print("Invalid choice. Please try again.")
+
+    def create_project(self) -> None:
+        print("\n--- Create a new project ---")
+        name = self.get_user_input("Project name: ")
+        if not self.running:
+            return
+
+        description = self.get_user_input("Project description: ")
+        if not self.running:
+            return
+
+        try:
+            project = self.project_service.create_project(
+                name=name,
+                description=description,
+            )
+            print(f"Project created successfully with ID: {project.id}")
+        except Exception as exc:
+            self.handle_error(exc)
+
+    def list_projects(self) -> None:
+        print("\n--- Project list ---")
+        try:
+            projects = self.project_service.list_projects()
+            if not projects:
+                print("No projects found.")
+                return
+
+            for project in projects:
+                print("\n" + "-" * 40)
+                print(f"ID: {project.id}")
+                print(f"Name: {project.name}")
+                print(f"Description: {project.description}")
+                print(f"Created at: {project.created_at}")
+            print("\nEnd of project list.")
+        except Exception as exc:
+            self.handle_error(exc)
+
+    def edit_project(self) -> None:
+        print("\n--- Edit a project ---")
+        project_id = self.get_int_input("Project ID: ")
+        if not self.running or project_id is None:
+            return
+
+        new_name = self.get_optional_input(
+            "New name (leave empty to keep current): "
+        )
+        if not self.running:
+            return
+
+        new_description = self.get_optional_input(
+            "New description (leave empty to keep current): "
+        )
+        if not self.running:
+            return
+
+        try:
+            project = self.project_service.update_project(
+                project_id=project_id,
+                name=new_name,
+                description=new_description,
+            )
+            print(f"Project with ID {project.id} updated successfully.")
+        except Exception as exc:
+            self.handle_error(exc)
+
+    def delete_project(self) -> None:
+        print("\n--- Delete a project ---")
+        project_id = self.get_int_input("Project ID: ")
+        if not self.running or project_id is None:
+            return
+
+        try:
+            self.project_service.delete_project(project_id)
+            print(f"Project with ID {project_id} deleted successfully.")
+        except Exception as exc:
+            self.handle_error(exc)
 
     def handle_tasks_menu(self) -> None:
         while self.running:
             self.display_tasks_menu()
             choice = self.get_user_input("Your choice: ")
 
+            if not self.running:
+                break
+
             if choice == "1":
                 self.create_task()
             elif choice == "2":
                 self.list_project_tasks()
             elif choice == "3":
-                self.update_task()
+                self.edit_task()
             elif choice == "4":
                 self.change_task_status()
             elif choice == "5":
@@ -395,26 +260,155 @@ class CLIInterface:
             elif choice == "6":
                 break
             else:
-                print(" Invalid choice.")
+                print("Invalid choice. Please try again.")
 
-    def run(self) -> None:
-        print(
-            "WARNING: The CLI interface is deprecated and will be removed "
-            "in a future version. Please use the HTTP API instead."
+    def create_task(self) -> None:
+        print("\n--- Create a new task ---")
+        project_id = self.get_int_input("Project ID: ")
+        if not self.running or project_id is None:
+            return
+
+        title = self.get_user_input("Task title: ")
+        if not self.running:
+            return
+
+        description = self.get_user_input("Task description: ")
+        if not self.running:
+            return
+
+        status = self.get_optional_input(
+            "Status (todo / doing / done) [default: todo]: "
         )
+        if not self.running:
+            return
 
-        print(" Welcome to the ToDoList Management System!")
+        if not status:
+            status = "todo"
 
-        while self.running:
-            self.display_menu()
-            choice = self.get_user_input("Your choice: ")
+        deadline = self.get_optional_input(
+            "Deadline (YYYY-MM-DD) [optional]: "
+        )
+        if not self.running:
+            return
 
-            if choice == "1":
-                self.handle_projects_menu()
-            elif choice == "2":
-                self.handle_tasks_menu()
-            elif choice == "3":
-                print(" Thank you for using the system! Goodbye!")
-                self.running = False
-            else:
-                print(" Invalid choice.")
+        try:
+            task = self.task_service.create_task(
+                project_id=project_id,
+                title=title,
+                description=description,
+                status=status,
+                deadline=deadline,
+            )
+            print(f"Task created successfully with ID: {task.id}")
+        except Exception as exc:
+            self.handle_error(exc)
+
+    def list_project_tasks(self) -> None:
+        print("\n--- Tasks of a project ---")
+        project_id = self.get_int_input("Project ID: ")
+        if not self.running or project_id is None:
+            return
+
+        try:
+            tasks = self.task_service.list_tasks_for_project(project_id)
+            if not tasks:
+                print("No tasks found for this project.")
+                return
+
+            status_icons = {
+                "todo": "[ ]",
+                "doing": "[~]",
+                "done": "[x]",
+            }
+
+            for task in tasks:
+                icon = status_icons.get(task.status, "[?]")
+                print("\n" + "-" * 40)
+                print(f"ID: {task.id}")
+                print(f"Title: {task.title}")
+                print(f"Description: {task.description}")
+                print(f"{icon} Status: {task.status}")
+                print(f"Deadline: {task.deadline or 'Not set'}")
+                print(f"Created at: {task.created_at}")
+                print(f"Closed at: {task.closed_at or 'Not closed'}")
+            print("\nEnd of task list.")
+        except Exception as exc:
+            self.handle_error(exc)
+
+    def edit_task(self) -> None:
+        print("\n--- Edit a task ---")
+        task_id = self.get_int_input("Task ID: ")
+        if not self.running or task_id is None:
+            return
+
+        new_title = self.get_optional_input(
+            "New title (leave empty to keep current): "
+        )
+        if not self.running:
+            return
+
+        new_description = self.get_optional_input(
+            "New description (leave empty to keep current): "
+        )
+        if not self.running:
+            return
+
+        new_status = self.get_optional_input(
+            "New status (todo / doing / done) [optional]: "
+        )
+        if not self.running:
+            return
+
+        new_deadline = self.get_optional_input(
+            "New deadline (YYYY-MM-DD) [optional]: "
+        )
+        if not self.running:
+            return
+
+        try:
+            task = self.task_service.update_task(
+                task_id=task_id,
+                title=new_title,
+                description=new_description,
+                status=new_status,
+                deadline=new_deadline,
+            )
+            print(f"Task with ID {task.id} updated successfully.")
+        except Exception as exc:
+            self.handle_error(exc)
+
+    def change_task_status(self) -> None:
+        print("\n--- Change task status ---")
+        task_id = self.get_int_input("Task ID: ")
+        if not self.running or task_id is None:
+            return
+
+        new_status = self.get_user_input(
+            "New status (todo / doing / done): "
+        )
+        if not self.running:
+            return
+
+        try:
+            task = self.task_service.change_status(
+                task_id=task_id,
+                status=new_status,
+            )
+            print(
+                f"Status of task with ID {task.id} "
+                f"changed to '{task.status}'."
+            )
+        except Exception as exc:
+            self.handle_error(exc)
+
+    def delete_task(self) -> None:
+        print("\n--- Delete a task ---")
+        task_id = self.get_int_input("Task ID: ")
+        if not self.running or task_id is None:
+            return
+
+        try:
+            self.task_service.delete_task(task_id)
+            print(f"Task with ID {task_id} deleted successfully.")
+        except Exception as exc:
+            self.handle_error(exc)
